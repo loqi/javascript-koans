@@ -100,12 +100,16 @@ primes.limit = 65536; // Memoization limit
 primes.last = function() { return this[this.length-1]; }
 primes.append = function(newLast) { if (this.length < this.limit) { this.push(newLast); } return newLast; }
 primes.reaches = function(n) { return n <= this.last(); }
-primes.ordinality = function(n) { var lef = 0, rig = this.length-1; // ordinality(10) => 4.5 (i.e. between 4th and 5th)
+primes.ordinality = function(n) {
+  var lef = 0, rig = this.length-1; // ordinality(10) => 4.5 (i.e. between 4th and 5th)
   if (n >= this[rig]) return rig + (n===this[rig] ? 1 : 1.5);
-  while (lef < rig) { mid = Math.floor((rig-lef)/2) + lef;
+  while (lef < rig) {
+    mid = Math.floor((rig-lef)/2) + lef;
     if (this[mid]===n) return mid+1;
-    if (this[mid] < n) lef = mid+1; else rig = mid-1; }
-  return mid + (this[mid]<n ? 2.5 : 1.5); }
+    if (this[mid] < n) lef = mid+1; else rig = mid-1;
+  }
+  return mid + (this[mid]<n ? 2.5 : 1.5);
+}
 primes.has = function(n) { var place = this.ordinality(n); return place==Math.floor(place); }
 var nxPrimeTab = primes.reduce(function(arr, p){ for (var c = p - arr.length; c ; c--) arr.push(p); return arr; }, []);
 
@@ -116,7 +120,8 @@ function greatestPrimeFactor(num) { // Returns 1 unless `num` is an integer >= 2
   var gpf = 1, n = num; d = 2, lim = Math.floor(Math.sqrt(n));
   // For d in 2..sqrt(num) { on each divisibility hit, `pf` grows and `n` shrinks. }
   while (n > 1 && d <= lim) { while (n%d===0){n/=(gpf=d);} d = d<nxPrimeTab.length ? nxPrimeTab[d] : d+2; }
-  return n > gpf ? n : gpf; }
+  return n > gpf ? n : gpf;
+}
 
 // Max time complexity: O(sqrt(n))  -- 
 function primeFactorArray(num) { // (NaN)=>[] (0)=>[0] (1)=>[] (neg)=>[-1,primes] (6.9)=>[2,3] (-6.9)=>[-1,2,3] (-0.9)=>[-1,0]
@@ -128,11 +133,14 @@ function primeFactorArray(num) { // (NaN)=>[] (0)=>[0] (1)=>[] (neg)=>[-1,primes
   var n = num; d = 2, lim = Math.floor(Math.sqrt(n));
   while (n > 1 && d <= lim) { while (n%d===0){n/=(pfa.push(d),d);} d = d<nxPrimeTab.length ? nxPrimeTab[d] : d+2; }
   if (n>1) pfa.push(n); // pfa will be in ascending sequence, except possibly the last element.
-  return pfa; }
+  return pfa;
+}
 
 function primeFactorHistogram(num) {
-  return primeFactorArray(num).reduce(function(h,pN){
-    pS = ''+pN; h[pS] = (h.hasOwnProperty(pS)?h[pS]:0) + 1 ;return h}, {}); }
+  return primeFactorArray(num).reduce(function(h,pN) {
+    pS = ''+pN; h[pS] = (h.hasOwnProperty(pS)?h[pS]:0) + 1 ;return h
+  }, {});
+}
 
 // Max time complexity: O(sqrt(n))
 function isPrime(num) { var n = Number(num);
@@ -145,65 +153,121 @@ function isPrime(num) { var n = Number(num);
   var sqrtNum = Math.sqrt(n);
   var maxDivBy = Math.floor(sqrtNum);
   if (sqrtNum === maxDivBy) return false;
-  for (var divBy = 5; divBy <= maxDivBy; divBy += 6)
+  for (var divBy = 5; divBy <= maxDivBy; divBy += 6) {
     if (n%divBy===0 || n%(divBy+2)===0) return false;
-  return true; }
+  }
+  return true;
+}
 
 // Max time complexity: O( (nextPrime(n)-n) * sqrt(n) )
 function nextPrime(num) { var n = Math.floor(Number(num)); // nextPrime(2.99) == nextPrime(2.00)
   if (n < nxPrimeTab.length) return (n>1 ? nxPrimeTab[n] : 2);
   if (primes.reaches(n)) {
     ord = primes.ordinality(n);
-    if (ord < primes.length) return primes[Math.floor(ord)]; }
+    if (ord < primes.length) return primes[Math.floor(ord)];
+  }
   while (!isPrime(  n += (n%2===0) ? 1 : 2  )) {}
   primes.append(n);
-  return n; }
+  return n;
+}
 
 // Max time complexity: O(n * sqrt(n))
 function nthPrime(n) { var n = Math.floor(Number(n));
   if (n <= primes.length) return n<1 ? 1 : primes[n-1];
   var prime = primes.last();
   for (var i = primes.length ; i < n ; i++) {
-    prime = nextPrime(prime); }
-  return prime; }
+    prime = nextPrime(prime);
+  }
+  return prime;
+}
 
 // Max time complexity: O(numAr.length * sqrt(numAr element))
 function leastCommonMultiple(numAr) { // TODO: Handle negatives
   primeMax = numAr.reduce(function(pm, num){ // primeMax = {prime : max_count_of_this_prime_factor_of_any_numAr_element, ...}
     var fta = primeFactorHistogram(num); // fundamental_theorem_of_arithmetic_factorization = { prime: exponent_of_the_prime ...}
     for (var pS in fta) { if (!isNaN(pS)) { pm[pS] = Math.max(pm.hasOwnProperty(pS)?pm[pS]:0, fta[pS]); } }
-    return pm; } ,{});
+    return pm;
+  } ,{});
   var lcm = 1;for(var pS in primeMax) { isNaN(pS) || (lcm *= Math.pow(+pS,primeMax[pS])); } // lcm = build the least common multiple.
-  return lcm; }
+  return lcm;
+}
 
 function squareOfSumMinusSumOfSquares(numAr) {
   var n=0, sum=0, sumOfSq=0;
   for (var i=0 ; i<numAr.length ; i++) { n = numAr[i];  sum += n;  sumOfSq += n*n; }
-  return sum*sum - sumOfSq; }
-
+  return sum*sum - sumOfSq;
+}
 function naturalSquareOfSumMinusSumOfSquares(n) { // Assumes n is a positive integer.
-  return (3*n*n + 2*n) * (n*n - 1) / 12; }
+  return (3*n*n + 2*n) * (n*n - 1) / 12;
+}
 
 // Given a parameter `x`, return true if x.toString is a character-level palendrome.
 function isPalendrome(stringish) { // TODO: could be more efficient.
-  return stringish.toString().split('').reverse().join('') == stringish; }
+  return stringish.toString().split('').reverse().join('') == stringish;
+}
 function isPalendromicNum(n) { // FIXME: Technically, 10 is palendromic because 10 == 010
-  return isPalendrome(parseInt(n)); } // TODO: is probably quicker and more reliable to do arithmetically.
+  return isPalendrome(parseInt(n)); // TODO: is probably quicker and more reliable to do arithmetically.
+}
 
 // Given two positive integers, mx1 and mx2, find two numbers, y1 and y2, such
 // that: y1 <= mx1; AND y2 <= mx2; AND criterionFunc(y1*y2) returns truish; AND
 // there exists no passing pair of values (y1', y2') whose product is greater.
 // Return them as an ascending-sorted array [y1, y2], where y1 <= y2.
 function greatestPassingMulPair(mx1, mx2, criterionCallback) {
-  // TODO: Rewrite this code in a less naive way using a series of subtraction.
   criterionCallback = criterionCallback || function(val) { return !!val; }
   var x, y, prod, biggest = 0, rval = [0,0];
-  for (y1 = mx1 ; y1 > 0 ; y1--) {
-    for (y2 = mx2 ; y2 >= y1 ; y2--) {
-      if (y1*y2 > biggest) { prod = y1*y2;
+  for (var y1 = mx1 ; y1 > 0 ; y1--) {
+    for (var y2 = mx2 ; y2 >= y1 ; y2--) {
+      if (y1*y2 > biggest) {
+        prod = y1*y2;
         if (criterionCallback(prod)) {
-          biggest = prod;  rval = [y1,y2];} } } }
-  return rval[0] <= rval[1] ? rval : rval.reverse(); }
+          biggest = prod;  rval = [y1,y2];
+        }
+      }
+    }
+  }
+  return rval[0] <= rval[1] ? rval : rval.reverse();
+}
+
+// // Given two positive integers, mx1 and mx2, find two numbers, y1 and y2, such
+// // that: y1 <= mx1; AND y2 <= mx2; AND criterionFunc(y1*y2) returns truish; AND
+// // there exists no passing pair of values (y1', y2') whose product is greater.
+// // Return them as an ascending-sorted array [y1, y2], where y1 <= y2.
+// function greatestPassingMulPair(mx1, mx2, criterionCallback) {
+//   criterionCallback = criterionCallback || function(val) { return !!val; }
+//   var a, b, top;
+//   var prodHeap = { // binary heap prioritized on greater product.
+//     dat: [null], // [ (index 0 unused), [product, either_factor], ...level.doubling.array... ]
+//     swap: function(i, j) { var t = this.dat[i]; this.dat[i] = this.dat[j]; this.dat[j] = t; },
+//     put: function(prod, fac) {
+//       b = this.dat.length;
+//       this.dat.push([prod, fac]);
+//       while (b>1 && this.dat[  a = Math.floor(b/2)  ][0] < this.dat[b][0]) {
+//         this.swap(a, b);  b = a; }
+//       },
+//     get: function() { // TODO: handle empty heap properly.
+//       top = (this.swap(1, this.dat.length-1), this.dat.pop());
+//       a = 1;
+//       while ((  b = a*2  ) < this.dat.length) {
+//         if (b < this.dat.length-1 && this.dat[b][0] < this.dat[b+1][0]) b++;
+//         if (this.dat[a][0] >= this.dat[b][0]) break;
+//         this.swap(a, b);  a = b; }
+//       // while (top[0]===this.dat[1][0]) {
+//       //   this.get(); }
+//       return top; }, }
+//   var prod, y1, y2, pair;
+//   if (mx2 < mx1) { y1 = mx2; y2 = mx1; } else { y1 = mx1; y2 = mx2; }
+//   prod = y1*y2;
+//   while (y1 > 1) {
+//     if (criterionCallback(prod)) return [y1, y2];
+//     prodHeap.put(prod-y1, y2-1);  prodHeap.put(prod-y2, y1-1);
+//     pair = prodHeap.get();  prod = pair[0];  y1 = pair[1];
+//     y2 = prod/y1; if(y1>y2){y1=y2;y2=pair[1];}
+//     }
+//   while(y2 > 0) { prod = y1*y2;
+//     // TODO: Write this second loop
+//     }
+//   }
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -233,6 +297,8 @@ function greatestPassingMulPair(mx1, mx2, criterionCallback) {
     expect(isPalendromicNum(303)).toBe(true);
     expect(isPalendromicNum(3993)).toBe(true);
     expect(isPalendromicNum(302575203)).toBe(true);
+
+    numPair = greatestPassingMulPair(7, 13, function(n){return false;});
 
     numPair = greatestPassingMulPair(999, 999, isPalendromicNum); // [913,993] :: 906609
     expect(numPair[0]).toBe(913);
